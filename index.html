@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mini uTorrent Web</title>
+  <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+  <style>
+    body {
+      background: #1e1e1e;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
+      width: 60%;
+    }
+    progress {
+      width: 80%;
+      height: 20px;
+    }
+    video {
+      width: 80%;
+      max-width: 800px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>uTorrent Lite (Web)</h1>
+
+  <input type="text" id="magnet" placeholder="Pega el magnet link aquí">
+  <br>
+  <input type="file" id="torrentFile" />
+  <br>
+  <button onclick="loadTorrent()">Cargar Torrent</button>
+
+  <div id="status">Esperando torrent...</div>
+  <progress id="progress" value="0" max="1"></progress>
+  <video id="videoPlayer" controls></video>
+
+  <script>
+    const client = new WebTorrent();
+    const status = document.getElementById('status');
+    const progress = document.getElementById('progress');
+
+    function loadTorrent() {
+      const magnet = document.getElementById('magnet').value;
+      const fileInput = document.getElementById('torrentFile');
+      if (magnet) {
+        client.add(magnet, onTorrent);
+      } else if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        client.add(file, onTorrent);
+      } else {
+        alert("Ingresa un magnet link o selecciona un archivo .torrent");
+      }
+    }
+
+    function onTorrent(torrent) {
+      status.textContent = `Descargando: ${torrent.name}`;
+
+      torrent.on('download', () => {
+        progress.value = torrent.progress;
+        status.textContent = `Progreso: ${(torrent.progress * 100).toFixed(1)}%`;
+      });
+
+      const file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv'));
+
+      if (file) {
+        file.renderTo('video#videoPlayer');
+      } else {
+        status.textContent += '\nNo se encontró video compatible';
+      }
+    }
+  </script>
+</body>
+</html>
