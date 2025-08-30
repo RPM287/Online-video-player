@@ -71,6 +71,7 @@
           status.textContent = `Progreso: ${(torrent.progress * 100).toFixed(1)}%`;
         });
 
+        // Intenta encontrar un archivo de video compatible
         const file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv'));
 
         if (file) {
