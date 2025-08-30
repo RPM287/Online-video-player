@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Mini uTorrent Web</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uTorrent Lite (Web)</title>
   <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
   <style>
     body {
@@ -30,11 +31,9 @@
   </style>
 </head>
 <body>
-  <h1>uTorrent Lite (Web)</h1>
+  <h1>uTorrent Lite Web</h1>
 
-  <input type="text" id="magnet" placeholder="Pega el magnet link aquí">
-  <br>
-  <input type="file" id="torrentFile" />
+  <input type="text" id="magnet" placeholder="Pega el magnet link aquí" />
   <br>
   <button onclick="loadTorrent()">Cargar Torrent</button>
 
@@ -46,35 +45,47 @@
     const client = new WebTorrent();
     const status = document.getElementById('status');
     const progress = document.getElementById('progress');
+    let currentTorrent = null;
 
     function loadTorrent() {
-      const magnet = document.getElementById('magnet').value;
-      const fileInput = document.getElementById('torrentFile');
-      if (magnet) {
-        client.add(magnet, onTorrent);
-      } else if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        client.add(file, onTorrent);
-      } else {
-        alert("Ingresa un magnet link o selecciona un archivo .torrent");
+      const magnet = document.getElementById('magnet').value.trim();
+      
+      if (!magnet) {
+        alert("Por favor, ingresa un magnet link.");
+        return;
       }
-    }
 
-    function onTorrent(torrent) {
-      status.textContent = `Descargando: ${torrent.name}`;
+      // Si ya hay un torrent en curso, destrúyelo antes de añadir el nuevo
+      if (currentTorrent) {
+        currentTorrent.destroy();
+        currentTorrent = null;
+      }
 
-      torrent.on('download', () => {
-        progress.value = torrent.progress;
-        status.textContent = `Progreso: ${(torrent.progress * 100).toFixed(1)}%`;
+      // Añadir el magnet link al cliente WebTorrent
+      client.add(magnet, (torrent) => {
+        status.textContent = `Descargando: ${torrent.name}`;
+        currentTorrent = torrent;
+
+        torrent.on('download', () => {
+          progress.value = torrent.progress;
+          status.textContent = `Progreso: ${(torrent.progress * 100).toFixed(1)}%`;
+        });
+
+        const file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv'));
+
+        if (file) {
+          file.renderTo('video#videoPlayer');
+        } else {
+          status.textContent = "No se encontró un video compatible.";
+        }
+
+        torrent.on('error', (err) => {
+          console.error("Error al cargar el torrent:", err);
+          status.textContent = "Hubo un error al intentar cargar el torrent.";
+        });
       });
 
-      const file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv'));
-
-      if (file) {
-        file.renderTo('video#videoPlayer');
-      } else {
-        status.textContent += '\nNo se encontró video compatible';
-      }
+      status.textContent = "Cargando torrent...";
     }
   </script>
 </body>
